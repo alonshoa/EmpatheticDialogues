@@ -15,6 +15,7 @@ from empchat.datasets.parlai_dictionary import ParlAIDictionary
 from empchat.datasets.tokens import get_bert_token_mapping, tokenize
 
 
+
 def txt2vec(dic, text, fasttext_type=None):
     if hasattr(dic, "bert_tokenizer"):
         orig_mapping = get_bert_token_mapping(fasttext_type)
@@ -27,7 +28,6 @@ def txt2vec(dic, text, fasttext_type=None):
         return dic.txt2vec(text)
     else:
         return [dic.index(token) for token in tokenize(text)]
-
 
 def sentence_to_tensor(dic, sentence, maxlen=None, fasttext_type=None):
     """
@@ -55,6 +55,7 @@ class EmpDataset(Dataset):
         fasttext=None,
         fasttext_type=None,
         fasttext_path=None,
+        sentence_to_tensor=sentence_to_tensor
     ):
         topicmap = {
             "alt.atheism": "atheism",
@@ -81,7 +82,7 @@ class EmpDataset(Dataset):
         }
         # ^ 'windows.misc' was included for compatibility because the code below
         # splits topics on hyphens
-        df = open(os.path.join(data_folder, f"{splitname}.csv")).readlines()
+        df = open(os.path.join(data_folder, f"{splitname}.csv"),encoding='utf8').readlines()
         newmaxlen = maxlen
         self.max_hist_len = history_len
         if fasttext is not None:
@@ -115,6 +116,7 @@ class EmpDataset(Dataset):
                 dic.bert_tokenizer = new_tokenizer
         self.reactonly = reactonly
         self.data = []
+        self.data_text = []
         self.ids = []
         history = []
         for i in range(1, len(df)):
@@ -159,6 +161,7 @@ class EmpDataset(Dataset):
                     ]
                     lbl_min = torch.LongTensor([[dic[sparts[2]]]])
                     self.data.append((contextt, label, lbl_min))
+                    self.data_text.append((prev_str, sent, lbl_min))
                     self.ids.append((sparts[0], sparts[1]))
             else:
                 history = []
